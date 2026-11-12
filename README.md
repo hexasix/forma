@@ -1,91 +1,98 @@
 # Forma
 
-A calmer place for good work. 基于 **Next.js App Router + React + TypeScript + Supabase** 的私人任务看板。
+A calmer place for good work. A private task workspace built with **Next.js App Router, React, TypeScript, and Supabase**.
 
-## 已实现
+**Live demo:** [forma-sigma-beryl.vercel.app](https://forma-sigma-beryl.vercel.app/)
 
-- 四列看板：To do / In progress / In review / Done。
-- 鼠标、触摸拖拽及键盘拖拽；跨列放下后保存，失败时恢复并提示。
-- 任务创建、编辑、删除、详情侧栏；标题、描述、优先级、截止日期。
-- 团队成员管理；一个任务可分配多位成员。成员是负责人信息，**不是共享账号或邀请功能**。
-- 标签创建、删除、多标签分配及筛选。
-- 任务评论与时间戳；任务修改、状态与分配的活动记录。
-- 按标题搜索，并组合筛选优先级、成员、标签、状态。
-- 看板 / 列表视图、任务完成进度、逾期和即将到期标记。
-- 响应式布局，清晰的空状态 / 加载状态 / 错误状态，保存反馈、删除确认、未保存修改提醒。
-- Supabase 匿名登录、数据持久化、所有表的 RLS、跨所有者关联的数据库约束。
-- 未配置 Supabase 时提供**明确标记的本地演示模式**，不冒充真实云端持久化。
+New visitors are signed in anonymously and start with an empty, private board. No email or password is required.
 
-## 1. 先在本地查看
+## Features
 
-建议使用 **Node.js 22.12+ 或 24 LTS**。本项目在 Node.js 26 上也完成了验证。
+- Four-column Kanban board: To do, In progress, In review, and Done.
+- Mouse, touch, and keyboard drag-and-drop, with status saved when a task is dropped.
+- Task creation, editing, deletion, and a detail panel with descriptions, priorities, and due dates.
+- Team member management and multiple assignees per task. Members are task assignees, **not shared-board accounts or invitations**.
+- Custom labels, multiple labels per task, and label filtering.
+- Persistent comments with timestamps, plus an activity history for task updates, status changes, and assignments.
+- Title search combined with priority, assignee, label, and status filters.
+- Board and list views, completion progress, and overdue / due-soon indicators.
+- Responsive layouts, loading and empty states, actionable errors, save notifications, deletion confirmation, and unsaved-change protection.
+- Supabase anonymous authentication, persistent storage, row-level security (RLS), and database constraints that prevent cross-owner associations.
+- An explicitly labeled **local demo mode** when Supabase is not configured.
+
+## Quick start
+
+Use **Node.js 22.12 or later**; Node.js 24 LTS is recommended. The application has also been built and tested on Node.js 26.
 
 ```bash
+git clone https://github.com/hexasix/forma.git
 cd forma
 npm ci
-cp .env.example .env.local  # 如果已有 .env.local，请直接编辑，不要覆盖
+cp .env.example .env.local
 npm run dev
 ```
 
-打开 <http://localhost:3000>。
+Open <http://localhost:3000>.
 
-两个环境变量都为空时进入本地演示：包含虚构的示例成员与任务，修改保存在当前浏览器的 localStorage 中。清理浏览器数据会移除这些修改。此模式方便检查 UI，**不满足最终验收所需的 Supabase 云端持久化**。
+If `.env.local` already exists, edit it instead of overwriting it.
 
-只配置一个变量会显示配置错误，不会悄悄回退到演示。
+With both Supabase values empty, the app runs in local demo mode with fictional sample tasks and members. Changes are stored in the current browser's localStorage and are lost if that site data is cleared. This mode is useful for exploring the interface, but **it is not Supabase-backed persistence**.
 
-## 2. 接入你的 Supabase
+Providing only one of the two required values produces a configuration error rather than silently falling back to the demo.
 
-### A. 创建项目
+## Connect Supabase
 
-在 <https://supabase.com/> 创建一个免费项目，等待数据库就绪。
+### 1. Create a project
 
-### B. 执行数据库 SQL
+Create a free project at <https://supabase.com/> and wait for the database to become available.
 
-打开项目的 **SQL Editor → New query**，粘贴并执行：
+### 2. Initialize the database
 
-```
+Open **SQL Editor → New query**, paste the contents of this file, and run it:
+
+```text
 supabase/migrations/001_initial.sql
 ```
 
-这是一个事务化的初始迁移，适用于**新的项目，只运行一次**。不要重复执行，也不要在已有同名业务表的数据库里直接运行。它会创建所有表、索引、RLS 策略、活动日志触发器以及原子化的 `save_task` RPC；不需要额外手动建表。
+This transactional initial migration is intended for **a new project and must be run only once**. Do not rerun it against existing tables with the same names. It creates the tables, constraints, indexes, RLS policies, activity triggers, and atomic `save_task` RPC. No separate manual table setup is needed.
 
-### C. 开启匿名登录
+### 3. Enable anonymous sign-in
 
-在 **Authentication → Sign In / Providers** 中找到并启用 **Anonymous Sign-Ins**（后台布局可能略有不同）。匿名用户无需邮箱或密码，登录后具有数据库的 `authenticated` 角色。
+In **Authentication → Sign In / Providers**, enable **Anonymous Sign-Ins** and save the setting. Dashboard navigation may vary slightly.
 
-### D. 配置环境变量
+Anonymous users do not need an email or password. Once signed in, they use Supabase's `authenticated` database role.
 
-在 Supabase 的 **Connect / Project Settings → API Keys** 中获取项目 URL 和公开的 **Publishable key**。旧版 `anon` key 也可使用。
+### 4. Set the public environment variables
 
-编辑 `.env.local`：
+Find the project URL and public **Publishable key** in Supabase's **Connect / Project Settings → API Keys**. A legacy public `anon` key is also supported.
+
+Edit `.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_PUBLIC_KEY
 ```
 
-**注意：**
+- Never use a `service_role` key, an `sb_secret_...` key, a database password, or a connection string here.
+- `NEXT_PUBLIC_` values are included in browser JavaScript. The public key identifies the project; **RLS must enforce access control**.
+- `.env.local` is ignored by Git. `.env.example` contains only an empty configuration template.
+- Restart the development server after changing environment variables. Deployment changes require a new build.
 
-- 不要填 `service_role`、`sb_secret_...`、数据库密码或连接字符串。
-- `NEXT_PUBLIC_` 变量会进入浏览器 JS；这里的 key 本来就是公开标识，权限安全必须依赖 RLS。
-- `.env.local` 被 Git 忽略；`.env.example` 只有空白模板。
-- 更改环境变量后，必须重启开发服务器；线上部署时必须重新构建。
+After restarting with `npm run dev`, the status indicator should show **Saved to Supabase**. A new guest starts with an empty cloud board. **Local demo records are never uploaded automatically.**
 
-重新执行 `npm run dev` 后，右上状态会显示 **Saved to Supabase**，真实看板从空数据开始。**本地演示数据不会自动上传**。
+## Verify persistence and guest isolation
 
-## 3. 验证真实数据与用户隔离
+1. Create a task in a normal browser window and refresh the page to confirm it persists.
+2. In Supabase's Table Editor, confirm that the task has been stored with the anonymous user's `user_id`.
+3. Open the app in a private browsing session or a different browser. This creates a separate guest, who should not see the first guest's tasks.
+4. Create a task in the second session, then refresh the first session. Neither guest should see the other's tasks.
+5. Check that status changes, edits, comments, labels, and multiple assignees survive a refresh.
 
-1. 在普通浏览器窗口创建任务 A，刷新后确认仍然存在。
-2. 在 Supabase Table Editor 中确认 `tasks` 行已保存，`user_id` 与匿名用户对应。
-3. 用隐身窗口或另一个浏览器打开 App；这是独立游客 B，应当看到空白看板，而不是 A 的任务。
-4. 在 B 中创建任务 B；返回 A 并刷新，A 不应看到 B 的任务。
-5. 验证拖拽后状态保存、评论保存、标签和多负责人保存。
+The automated database tests validate SQL, triggers, RLS, cross-owner access restrictions, and transaction rollback in an isolated PostgreSQL / PGlite instance. These tests do not replace integration checks against your own hosted Supabase Auth and PostgREST configuration.
 
-自动化测试在本地 PostgreSQL / PGlite 中验证了 SQL、触发器、RLS、跨用户写入拦截以及事务回滚。**Supabase Auth / PostgREST 的真实联调仍需按上述步骤，在你自己的项目中验证**；没有配置密钥时不能将本地测试视为真实云端验证。
+Guest identity belongs to the current browser session's persisted authentication state. Clearing site storage, switching devices, or losing that session creates a different guest. Existing records are not automatically transferred, and there is no email-based recovery flow.
 
-匿名会话保存在当前浏览器。清理站点数据、使用另一设备或失去会话会产生新的游客身份，旧数据不会自动归属新身份，也没有邮件找回流程。
-
-## 4. 测试与生产构建
+## Tests and production build
 
 ```bash
 npm run typecheck
@@ -95,84 +102,86 @@ npm run build
 npm start
 ```
 
-浏览器测试使用 Playwright：
+The test suite includes **32 unit / database tests** and **9 browser scenarios**. Browser coverage includes the task lifecycle, reload persistence, mouse / keyboard / touch dragging, comments and activity, search and filters, member and label management, phone layouts, unsaved changes, empty / damaged local storage, and automated WCAG A/AA-tagged checks of the board and task editor.
+
+Install Playwright's Chromium browser and run the browser suite:
 
 ```bash
 npx playwright install chromium
 npm run test:e2e
 ```
 
-若已安装桌面 Google Chrome，可在 macOS / Linux 使用：
+If desktop Google Chrome is already installed, macOS / Linux users can instead run:
 
 ```bash
 PLAYWRIGHT_CHANNEL=chrome npm run test:e2e
 ```
 
-测试覆盖任务生命周期、刷新持久化、鼠标 / 键盘拖拽、搜索筛选、成员标签、手机页面宽度、未保存提醒、损坏存储、空看板及自动化 WCAG AA 检查。测试需要本地演示模式；**不要在连接真实 Supabase 的个人工作数据上运行这些演示测试**。
+**Browser scenarios require local demo mode.** Use a separate checkout with both Supabase values empty, or clear both values and restart the local server before running the suite. Do not run these demo scenarios against personal cloud data.
 
-测试截图及失败 trace 保存在被 Git 忽略的 `test-results/` 下。
+Screenshots and failure traces are written to the Git-ignored `test-results/` directory.
 
-## 5. 部署到 Vercel 免费版
+## Deploy to Vercel
 
-1. **仅将 `forma` 目录作为代码仓库**，不要把上层的测评原始 PDF 加入仓库。
-2. 将仓库导入 Vercel，框架选择 Next.js。如果仓库本身就是 `forma` 内容，Root Directory 使用默认值。
-3. 为部署环境配置上述两个 `NEXT_PUBLIC_SUPABASE_*` 变量。
-4. 部署完成后，使用线上 URL 重复真实数据与用户隔离验证。
-5. 后续修改公开环境变量，也要重新部署；不是只改配置就会改变已有浏览器 bundle。
+The live application is available at <https://forma-sigma-beryl.vercel.app/>.
 
-没有独立 Go / Express 服务，不需要后台服务密钥、付费 API 或另外的服务器。应用使用 Next.js，数据层通过浏览器 Supabase SDK 调用 Auth / PostgREST。
+To deploy your own instance on Vercel's free tier:
 
-本项目未自动推送 GitHub、未创建任何远程资源、未公开部署。公开访问的长期产品还应补充 CAPTCHA / 限流、滥用治理和匿名账号清理策略；当前默认配置用于测评演示。**不要直接在 Supabase 开启强制 CAPTCHA 而不增加前端验证流程，否则匿名登录将失败。**
+1. Import this repository into Vercel and select **Next.js**. Leave Root Directory at its default when the repository root contains `package.json`.
+2. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the deployment environment.
+3. Deploy, then repeat the persistence and isolation checks using the production URL.
+4. Verify that the production domain opens in a private browser window without requiring a Vercel login.
+5. Rebuild and redeploy whenever public environment variables change; changing settings alone does not update an existing browser bundle.
 
-## 数据模型与安全设计
+There is no separate Go / Express service, backend service key, paid API, or additional application server to configure. The Next.js app uses the browser Supabase SDK for Auth and PostgREST access.
 
-| 表               | 用途                                                          |
-| ---------------- | ------------------------------------------------------------- |
-| `tasks`          | 标题、描述、四种状态、优先级、截止日期、创建/更新时间、所有者 |
-| `members`        | 当前用户的虚拟团队成员：姓名、颜色                            |
-| `labels`         | 当前用户的自定义标签：名称、颜色                              |
-| `task_assignees` | 任务与成员的多对多关系                                        |
-| `task_labels`    | 任务与标签的多对多关系                                        |
-| `comments`       | 任务评论、时间戳及所有者                                      |
-| `activity_log`   | 数据库触发器生成的任务活动记录                                |
+Keep credentials, original assessment PDFs, and private submission documents out of the repository.
 
-- 所有表均启用 RLS；仅 `auth.uid() = user_id` 的已登录用户可访问。
-- `WITH CHECK` 阻止伪造、转移所有者；未登录的 `anon` 角色无表权限。
-- 关联表与评论通过 `(entity_id, user_id)` **复合外键**确保关联对象也属于相同用户，不能只靠客户端筛选。
-- `save_task` 以调用者权限执行；任务与负责人、标签在同一数据库事务内提交，失败全部回滚。
-- 活动表对客户端只读。写入来自固定 `search_path` 的触发器函数，且客户端无函数执行权限。
-- 删除任务会级联删除相关评论、活动、分配和标签关联；删除成员 / 标签不会删除任务。
-- 所有 SQL 均位于初始迁移中，可直接作为数据库 Schema 交付材料。
+A longer-lived public deployment should add CAPTCHA with a matching frontend flow, rate limiting, abuse controls, and anonymous-account cleanup. **Do not enable mandatory CAPTCHA in Supabase without implementing the corresponding frontend verification, or anonymous sign-in will fail.**
 
-## 代码结构
+## Data model and security
+
+| Table            | Purpose                                                               |
+| ---------------- | --------------------------------------------------------------------- |
+| `tasks`          | Title, description, status, priority, due date, timestamps, and owner |
+| `members`        | Guest-owned team member names and colors                              |
+| `labels`         | Guest-owned custom label names and colors                             |
+| `task_assignees` | Many-to-many relationships between tasks and members                  |
+| `task_labels`    | Many-to-many relationships between tasks and labels                   |
+| `comments`       | Task comments, timestamps, and owner                                  |
+| `activity_log`   | Task activity generated by database triggers                          |
+
+- Every table has RLS enabled. Authenticated guests can access only records where `auth.uid() = user_id`.
+- `WITH CHECK` policies prevent owner spoofing or transfer. Unauthenticated users with the `anon` role have no table access.
+- **Composite foreign keys** on `(entity_id, user_id)` ensure that associated tasks, members, labels, and comments belong to the same owner. Client-side filtering alone is not used as a security boundary.
+- `save_task` runs with the caller's permissions and saves task fields, assignees, and labels in one transaction. A failed association rolls back the entire save.
+- Activity records are read-only to clients. Trigger-only functions use a fixed `search_path`, and clients cannot execute them directly.
+- Deleting a task cascades to its comments, activity, assignments, and label associations. Removing a member or label does not delete tasks.
+- The complete schema, policies, grants, and functions are included in the initial migration.
+
+## Project structure
 
 ```text
-src/app/                    Next.js 页面、布局、全局样式
-src/components/workspace.tsx 工作区、导航、筛选和面板调度
-src/components/board.tsx     拖拽看板和列表
-src/components/task-dialog.tsx 任务编辑、评论及活动侧栏
-src/components/manage-dialog.tsx 成员和标签管理
-src/components/ui.tsx       对话框、头像及通用 UI
-src/lib/types.ts            领域模型
-src/lib/repository.ts       同一接口下的 demo / Supabase 数据实现
-src/lib/use-board.ts        加载、串行修改、乐观更新和错误恢复
-src/lib/utils.ts            校验、筛选和本地日期逻辑
-supabase/migrations/        完整数据库迁移
- tests/                     领域逻辑、存储、PostgreSQL 安全、浏览器测试
+src/app/                         Next.js page, layout, and global styles
+src/components/workspace.tsx     Workspace navigation, filters, and panel state
+src/components/board.tsx         Drag-and-drop board and list view
+src/components/task-dialog.tsx   Task editor, comments, and activity panel
+src/components/manage-dialog.tsx Member and label management
+src/components/ui.tsx            Dialogs, avatars, and shared UI
+src/lib/types.ts                 Domain models
+src/lib/repository.ts            Demo and Supabase storage implementations
+src/lib/use-board.ts             Loading, serialized mutations, and error recovery
+src/lib/utils.ts                 Validation, filtering, and local-date helpers
+supabase/migrations/             Complete database migration
+tests/                          Unit, storage, PostgreSQL security, and browser tests
 ```
 
-## 设计取舍
+## Design decisions and tradeoffs
 
-- 使用柔和中性色与低饱和绿色，靠排版、间距和明确状态图形区分层级，而不只依赖颜色。移动端使用单列堆叠，避免整页横向滚动。
-- 标题搜索、筛选和概览都在当前工作区内完成；状态在放下卡片后保存，不依赖 WebSocket。不同窗口的更新通过 Refresh 获取。
-- 当前不支持同列内自定义排序；跨列拖拽是明确实现的核心交互。触屏和键盘用户也可以在任务详情中直接修改状态。
-- 数据读取面向小型测评工作区，暂未加入服务端分页；Supabase 默认返回行数上限会限制大规模任务、评论和活动列表。
-- 任务详情和其关联实体采用一笔事务；评论单独保存，评论按钮不会自动保存尚未提交的任务字段。
-- 日期为数据库 `date`，使用本地日历日期判断是否逾期，避免 UTC 转换导致前一天 / 后一天偏差。活动、评论使用 `timestamptz`。
-- 后续可增加正式账号升级、可恢复身份、多人共享权限、实时订阅、分页、同列排序与附件。目前没有假装实现这些能力。
-
-## 提交材料
-
-提交前需要你填入真实线上链接、GitHub 链接与个人姓名，再整理成要求的 PDF / DOCX。可引用本 README 的功能、设计取舍和运行说明，以及迁移文件中的 SQL。
-
-请勿在仓库中包含原始测评 PDF，或在公开社交平台发布最终提交材料链接。项目外的原始文档没有被修改或上传。
+- A restrained neutral palette and green accent support the hierarchy; typography, spacing, status icons, and text carry meaning alongside color. Narrow phone layouts stack columns instead of requiring horizontal page scrolling.
+- Search, filtering, and summaries operate within the current workspace. Status is saved on drop rather than through WebSocket-based collaboration. Use Refresh to retrieve changes from another window.
+- Cross-column dragging is supported; custom ordering within a column is not. Touch and keyboard users can also update status through the task editor.
+- Reads are designed for a small workspace and do not use server-side pagination. Supabase's default row limits constrain larger task, comment, and activity lists.
+- Task fields and their associations are saved atomically. Comments are saved separately; posting a comment does not save unsubmitted task edits.
+- Due dates use PostgreSQL `date` and local calendar comparisons to avoid UTC day shifts. Comments and activity use `timestamptz`.
+- Recoverable accounts, shared-workspace permissions, real-time subscriptions, pagination, same-column ordering, and attachments are possible future improvements, not capabilities claimed by this version.
